@@ -11,6 +11,16 @@
 #include <utility>
 #include <limits>
 
+std::string weaponToString(WeaponType w) {
+    switch(w) {
+        case flamethrower: return "flamethrower";
+        case railgun:      return "railgun";
+        case grenade:      return "grenade";
+        case hammer:       return "hammer";
+        default:           return "unknown";
+    }
+}
+
 Arena:: Arena(): rows(20), cols(20), current_round(1){
     std::srand(std::time(nullptr));
     std::cout << "Arena created: " << rows << "x" << cols << "\n";
@@ -45,12 +55,12 @@ void Arena::run_sim(bool live){
     placeRobots();
         
     placeObstacles();
-    //addTestObstacles();
+
+    clearScreen();
 
 
         while(!checkWinner() && current_round < 100000){
         std::cout << "\n=========== Round " << current_round << " ===========\n";
-        //printBoard();
         
         for (auto robot: robots){
             if (robot->get_health() <= 0 && death_registry.getDeathRound(robot) == -1){
@@ -295,7 +305,7 @@ void Arena::placeObstacles(){
 
     int obstacles_placed = 0;
     int attempts = 0;
-    const int max = 500;
+    const int max = 100;
     while (obstacles_placed < total_obstacles && attempts < max){
         int row = rand() % rows;
         int col = rand() % cols;
@@ -369,8 +379,8 @@ std::vector<RadarObj> Arena::scanRadar(RobotBase* robot, int direction) {
     int robot_row, robot_col;
     robot->get_current_location(robot_row, robot_col);
 
-    std::cout << "  [RADAR DEBUG] Scanning from (" << robot_row << "," << robot_col 
-              << ") direction " << direction << "\n";
+    //std::cout << "  [RADAR DEBUG] Scanning from (" << robot_row << "," << robot_col 
+    //         << ") direction " << direction << "\n";
     
     
     // Direction 0: Check 8 surrounding cells (3x3 minus center)
@@ -469,7 +479,7 @@ std::vector<RadarObj> Arena::scanRadar(RobotBase* robot, int direction) {
             scanning = false;
         }
     }
-    std::cout << "  [RADAR DEBUG] Total objects found: " << results.size() << "\n";
+    //std::cout << "  [RADAR DEBUG] Total objects found: " << results.size() << "\n";
     return results;
 }
 
@@ -482,14 +492,14 @@ void Arena::handleShooting(RobotBase* shooter, int target_row, int target_col) {
     
     // Get shooter's weapon type
     WeaponType weapon = shooter->get_weapon();
-    std::cout << "  [WEAPON] " << weapon << "\n";
+    std::cout << "  [WEAPON] " << weaponToString(weapon) << "\n";
     
     std::vector<std::pair<int, int>> affected_cells;
     
     // Calculate affected cells based on weapon type
     switch(weapon) {
         case railgun: {
-            std::cout << "  [RAILGUN] Firing through entire line\n";
+            //std::cout << "  [RAILGUN] Firing through entire line\n";
             // Railgun goes through everything to edge of arena
             // Calculate direction vector from shooter to target
             int dr = target_row - shooter_row;
@@ -513,7 +523,7 @@ void Arena::handleShooting(RobotBase* shooter, int target_row, int target_col) {
         }
         
         case flamethrower: {
-            std::cout << "  [FLAMETHROWER] 3x4 area\n";
+            //std::cout << "  [FLAMETHROWER] 3x4 area\n";
             // Flamethrower: 3 cells wide, 4 cells long from shooter
             // Determine direction from shooter to target
             int dr = target_row - shooter_row;
@@ -553,14 +563,14 @@ void Arena::handleShooting(RobotBase* shooter, int target_row, int target_col) {
         }
         
         case hammer: {
-            std::cout << "  [HAMMER] Adjacent cell only\n";
+            //std::cout << "  [HAMMER] Adjacent cell only\n";
             // Hammer: just the target cell (must be adjacent)
             affected_cells.push_back({target_row, target_col});
             break;
         }
         
         case grenade: {
-            std::cout << "  [GRENADE] 3x3 area at target\n";
+            //std::cout << "  [GRENADE] 3x3 area at target\n";
             // Grenade: 3x3 area at target location
             for (int dr = -1; dr <= 1; dr++) {
                 for (int dc = -1; dc <= 1; dc++) {
@@ -569,7 +579,7 @@ void Arena::handleShooting(RobotBase* shooter, int target_row, int target_col) {
             }
             // Check grenade ammo
             if (shooter->get_grenades() <= 0) {
-                std::cout << "  [AMMO] No grenades left!\n";
+                //std::cout << "  [AMMO] No grenades left!\n";
                 return;
             }
             break;
@@ -663,7 +673,7 @@ void Arena::handleShooting(RobotBase* shooter, int target_row, int target_col) {
 
 void Arena::handleMovement(RobotBase* robot, int direction, int distance) {
     if (distance <= 0 || direction < 0 || direction > 8) {
-        std::cout << "  [MOVEMENT] Invalid movement parameters\n";
+        //std::cout << "  [MOVEMENT] Invalid movement parameters\n";
         return;
     }
     
@@ -678,12 +688,12 @@ void Arena::handleMovement(RobotBase* robot, int direction, int distance) {
     int max_move = robot->get_move_speed();
     if (distance > max_move) {
         distance = max_move;
-        std::cout << "  [MOVEMENT] Capped distance to " << max_move << " (robot's max speed)\n";
+        //std::cout << "  [MOVEMENT] Capped distance to " << max_move << " (robot's max speed)\n";
     }
     
     // Get direction vector
     if (direction == 0 || direction > 8) {
-        std::cout << "  [MOVEMENT] Invalid direction\n";
+        //std::cout << "  [MOVEMENT] Invalid direction\n";
         return;
     }
     
@@ -701,7 +711,7 @@ void Arena::handleMovement(RobotBase* robot, int direction, int distance) {
         
         // Check bounds
         if (next_row < 0 || next_row >= rows || next_col < 0 || next_col >= cols) {
-            std::cout << "  [MOVEMENT] Hit boundary at step " << (step + 1) << "\n";
+            //std::cout << "  [MOVEMENT] Hit boundary at step " << (step + 1) << "\n";
             break;
         }
         
@@ -711,14 +721,14 @@ void Arena::handleMovement(RobotBase* robot, int direction, int distance) {
         // Check for collisions
         if (next_cell != '.') {
             // Something is in the way
-            std::cout << "  [MOVEMENT] Collision at (" << next_row << "," << next_col 
-                      << ") with '" << next_cell << "'\n";
+            //std::cout << "  [MOVEMENT] Collision at (" << next_row << "," << next_col 
+            //          << ") with '" << next_cell << "'\n";
             
             // Apply obstacle effect
             if (next_cell == 'M' || next_cell == 'X' || 
                 (next_cell >= '!' && next_cell <= '&' && next_cell != robot->m_character)) {
                 // Mound, Dead robot, or other live robot: stop movement
-                std::cout << "  [MOVEMENT] Stopped by obstacle/robot\n";
+                //std::cout << "  [MOVEMENT] Stopped by obstacle/robot\n";
                 break;
             }
             else if (next_cell == 'P') {
