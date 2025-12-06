@@ -5,6 +5,7 @@
 #include "RobotBase.h"
 #include "RadarObj.h"
 #include "DeathTracker.h"
+#include <map>
 
 
 class Arena {
@@ -38,6 +39,7 @@ private:
     void handleMovement(RobotBase* robot, int direction, int distance);
     bool isValidMove(int row, int col, RobotBase* robot) const;
     void applyObstacleEffect(RobotBase* robot, char obstacle_type, int row, int col);
+    void printGameSummary();
 };
 
 #endif

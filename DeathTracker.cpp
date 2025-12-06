@@ -12,3 +12,5 @@ int DeathTracker::getDeathRound(RobotBase* robot) const {
     auto it = death_rounds.find(robot);
         return it != death_rounds.end() ? it-> second: -1;
 }
+
+

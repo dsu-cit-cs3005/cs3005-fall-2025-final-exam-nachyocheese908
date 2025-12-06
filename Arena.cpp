@@ -10,6 +10,7 @@
 #include <set>
 #include <utility>
 #include <limits>
+#include <functional>
 
 std::string weaponToString(WeaponType w) {
     switch(w) {
@@ -29,6 +30,7 @@ Arena:: Arena(): rows(20), cols(20), current_round(1){
 }
 
 Arena::~Arena(){
+    printGameSummary();
     for (auto robot:robots){
         delete robot;
     }
@@ -38,6 +40,8 @@ Arena::~Arena(){
         }
     }
     std::cout << "Arena destroyed\n";
+    
+    
 }
 
 
@@ -58,13 +62,25 @@ void Arena::run_sim(bool live){
 
     clearScreen();
 
+        while(!checkWinner() && current_round < 10000){
 
-        while(!checkWinner() && current_round < 100000){
-        std::cout << "\n=========== Round " << current_round << " ===========\n";
+            int alive_count = 0;
+            for (auto robot : robots) {
+                if (robot->get_health() > 0) {
+                    alive_count++;
+                }
+            }
+            
+            // ========== CHANGED: Three end conditions ==========
+            // 1. Only 0 or 1 robot alive (game ends naturally)
+            // 2. Max rounds reached with multiple alive (DRAW)
+            if (alive_count <= 1 || current_round >= 9999) {
+                std::cout << "\n=========== FINAL ROUND " << current_round << " ===========\n";}
         
         for (auto robot: robots){
             if (robot->get_health() <= 0 && death_registry.getDeathRound(robot) == -1){
                 death_registry.recordDeath(robot, current_round);
+                death_registry.deaths_for_summmary.push_back(robot);
             }
 
             if (robot->get_health() <= 0){
@@ -113,11 +129,6 @@ void Arena::run_sim(bool live){
                           << ", distance " << move_distance << "\n";
                 // TODO: Process movement later
                 handleMovement(robot, move_direction, move_distance);
-            }
-            //get death round
-            if (robot->get_health() <= 0){
-                death_registry.recordDeath(robot, current_round);
-
             }
         }
         printBoard();
@@ -305,7 +316,7 @@ void Arena::placeObstacles(){
 
     int obstacles_placed = 0;
     int attempts = 0;
-    const int max = 100;
+    const int max = 1000;
     while (obstacles_placed < total_obstacles && attempts < max){
         int row = rand() % rows;
         int col = rand() % cols;
@@ -328,11 +339,12 @@ void Arena::placeObstacles(){
 
             board[row][col] = chosen_obstacle;
             obstacles_placed++;
+            attempts++;
 
         }
 
 
-    } attempts++;
+    } 
 
 }
 
@@ -654,6 +666,8 @@ void Arena::handleShooting(RobotBase* shooter, int target_row, int target_col) {
                     std::cout << "  ☠️ " << robot->m_name << " HAS BEEN DESTROYED!\n";
                     // Mark as dead on board (change character to 'X')
                     board[row][col] = 'X';
+                    death_registry.recordDeath(robot, current_round);
+                    death_registry.deaths_for_summmary.push_back(robot);
                 }
             }
         }
@@ -750,6 +764,13 @@ void Arena::handleMovement(RobotBase* robot, int direction, int distance) {
                 int damage = 30 + (rand() % 21); // 30-50
                 robot->take_damage(damage);
                 std::cout << "  [DAMAGE] Took " << damage << " damage from flamethrower\n";
+
+                if (robot->get_health() <= 0){
+                    board[new_row][new_col] = 'X';
+
+                    death_registry.recordDeath(robot, current_round);
+                    std::cout << "  ☠️ " << robot->m_name << " DIED FROM FLAMETHROWER!\n";
+                }
                 
                 steps_taken++;
                 // Continue moving (flamethrowers don't block)
@@ -841,5 +862,76 @@ bool Arena::checkWinner() const{
             alive++;
         }
     }
-    return alive <= 1;
+    return alive == 1;
+}
+
+void Arena::printGameSummary(){
+    std::vector<RobotBase*> alive_robots;
+    for (auto robot : robots) {
+        if (robot->get_health() > 0) {
+            alive_robots.push_back(robot);
+        }
+    }
+    
+    std::cout << "\n--------------------\n";
+    
+    // Determine if it's a win or draw
+    if (alive_robots.size() == 1) {
+        // WIN: One survivor
+        std::cout << "WINNER: " << alive_robots[0]->m_name << alive_robots[0]->m_character << "\n";
+    } else if (alive_robots.size() > 1) {
+        // DRAW: Multiple survivors (max rounds reached)
+        std::cout << "DRAW: " << alive_robots.size() << " survivors after " << current_round << " rounds\n";
+    } else {
+        // DRAW: All died simultaneously (rare)
+        std::cout << "DRAW: All robots destroyed!\n";
+    }
+    
+    std::cout << "--------------------\n";
+    
+    // Get all robots sorted by status
+    std::vector<RobotBase*> all_robots = robots;
+    
+    // Sort: alive first (by health descending), then dead (by death round descending)
+    std::sort(all_robots.begin(), all_robots.end(),
+        [&](RobotBase* a, RobotBase* b) {
+            bool a_alive = a->get_health() > 0;
+            bool b_alive = b->get_health() > 0;
+            
+            // Alive before dead
+            if (a_alive && !b_alive) return true;
+            if (!a_alive && b_alive) return false;
+            
+            // Both alive: sort by health (highest first)
+            if (a_alive && b_alive) {
+                return a->get_health() > b->get_health();
+            }
+            
+            // Both dead: sort by death round (latest death first = better placement)
+            int death_a = death_registry.getDeathRound(a);
+            int death_b = death_registry.getDeathRound(b);
+            return death_a > death_b;
+        });
+    
+    // Print all robots with their status
+    int place = 1;
+    for (auto robot : all_robots) {
+        if (robot->get_health() > 0) {
+            // Alive robot
+            std::cout << place << ". " << robot->m_name << robot->m_character 
+                      << " (survived with " << robot->get_health() << " health)\n";
+        } else {
+            // Dead robot
+            int death_round = death_registry.getDeathRound(robot);
+            if (death_round != -1) {
+                std::cout << place << ". " << robot->m_name << robot->m_character 
+                          << " (died round " << death_round << ")\n";
+            } else {
+                // Shouldn't happen, but just in case
+                std::cout << place << ". " << robot->m_name << robot->m_character 
+                          << " (destroyed)\n";
+            }
+        }
+        place++;
+    }
 }
