@@ -101,15 +101,15 @@ void Arena::run_sim(bool live){
             // STEP 1: Radar
             int radar_direction;
             robot->get_radar_direction(radar_direction);
-            std::cout << "  Radar direction: " << radar_direction << "\n";
+            //std::cout << "  Radar direction: " << radar_direction << "\n";
             
             std::vector<RadarObj> radar_results = scanRadar(robot, radar_direction);
 
-            std::cout << "  Found " << radar_results.size() << " object(s):\n";
-            for (const auto& obj : radar_results) {
-                std::cout << "    - Type '" << obj.m_type << "' at (" 
-                          << obj.m_row << ", " << obj.m_col << ")\n";
-            }
+            //std::cout << "  Found " << radar_results.size() << " object(s):\n";
+            //for (const auto& obj : radar_results) {
+            //    std::cout << "    - Type '" << obj.m_type << "' at (" 
+            //              << obj.m_row << ", " << obj.m_col << ")\n";
+            //}
 
             robot->process_radar_results(radar_results);
             
@@ -695,8 +695,8 @@ void Arena::handleMovement(RobotBase* robot, int direction, int distance) {
     int current_row, current_col;
     robot->get_current_location(current_row, current_col);
     
-    std::cout << "  [MOVEMENT] Robot at (" << current_row << "," << current_col 
-              << ") wants to move direction " << direction << " for " << distance << " cells\n";
+    //std::cout << "  [MOVEMENT] Robot at (" << current_row << "," << current_col 
+    //          << ") wants to move direction " << direction << " for " << distance << " cells\n";
     
     // Cap distance at robot's move speed
     int max_move = robot->get_move_speed();
@@ -795,10 +795,10 @@ void Arena::handleMovement(RobotBase* robot, int direction, int distance) {
         // Update robot's position
         robot->move_to(new_row, new_col);
         
-        std::cout << "  [MOVEMENT] Moved " << steps_taken << " steps to (" 
-                  << new_row << "," << new_col << ")\n";
+        //std::cout << "  [MOVEMENT] Moved " << steps_taken << " steps to (" 
+        //          << new_row << "," << new_col << ")\n";
     } else {
-        std::cout << "  [MOVEMENT] Did not move\n";
+        std::cout << "  Did not move\n";
     }
 }
 void Arena::printBoard() const {
