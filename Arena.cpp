@@ -70,10 +70,7 @@ void Arena::run_sim(bool live){
                     alive_count++;
                 }
             }
-            
-            // ========== CHANGED: Three end conditions ==========
-            // 1. Only 0 or 1 robot alive (game ends naturally)
-            // 2. Max rounds reached with multiple alive (DRAW)
+
             if (alive_count <= 1 || current_round >= 9999) {
                 std::cout << "\n=========== FINAL ROUND " << current_round << " ===========\n";}
         
@@ -127,12 +124,14 @@ void Arena::run_sim(bool live){
                 robot->get_move_direction(move_direction, move_distance);
                 std::cout << "  Wants to move: direction " << move_direction 
                           << ", distance " << move_distance << "\n";
-                // TODO: Process movement later
+                //STEP 3.a: Process movement
                 handleMovement(robot, move_direction, move_distance);
             }
         }
+        //STEP 4: Print the board
         printBoard();
 
+        //STEP 5: If live, enforce keystrokes to continue
         if (is_live){
             std::cout << "Press ENTER to continue to the next round...\n";
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
@@ -258,11 +257,9 @@ void Arena::placeRobots() {
             int row = rand() % rows;
             int col = rand() % cols;
             
-            // Check if cell is empty
             if (board[row][col] == '.') {
-                // Place robot
                 robots[i]->move_to(row, col);
-                board[row][col] = robots[i]->m_character;  // Use robot's display char
+                board[row][col] = robots[i]->m_character;
                 placed = true;
                 
                 std::cout << "  " << robots[i]->m_name << " (" 
@@ -273,7 +270,6 @@ void Arena::placeRobots() {
         
         if (!placed) {
             std::cerr << "  ERROR: Could not place " << robots[i]->m_name << "!\n";
-            // Try to find any empty spot
             for (int r = 0; r < rows && !placed; r++) {
                 for (int c = 0; c < cols && !placed; c++) {
                     if (board[r][c] == '.') {
@@ -304,7 +300,8 @@ void Arena::placeObstacles(){
             }
         }
     }
-
+    
+    //Used to determine what percent of the map should be covered in obstacles, 10-20%
     int cells = rows*cols;
     int min_obstacles = cells / 10;
     int max_obstacles = cells / 5;
@@ -348,9 +345,7 @@ void Arena::placeObstacles(){
 
 }
 
-// ============ RADAR IMPLEMENTATION ============
-
-// Helper: Convert board display character to radar type
+// Helper: Convert board display character to radar type, Deepseek special xD
 char Arena::convertToRadarType(char display_char) const {
     // Robot characters (live robots)
     if (display_char == '!' || display_char == '@' || 
@@ -416,8 +411,6 @@ std::vector<RadarObj> Arena::scanRadar(RobotBase* robot, int direction) {
     int dir_col = directions[direction].second;
     
     // Determine side vectors for 3-wide scanning
-    // For orthogonal directions (1,3,5,7): side vectors are perpendicular
-    // For diagonal directions (2,4,6,8): side vectors are at 45 degrees
     
     int side1_row, side1_col, side2_row, side2_col;
     
@@ -511,17 +504,12 @@ void Arena::handleShooting(RobotBase* shooter, int target_row, int target_col) {
     // Calculate affected cells based on weapon type
     switch(weapon) {
         case railgun: {
-            //std::cout << "  [RAILGUN] Firing through entire line\n";
-            // Railgun goes through everything to edge of arena
-            // Calculate direction vector from shooter to target
             int dr = target_row - shooter_row;
             int dc = target_col - shooter_col;
             
-            // Normalize direction (make dr/dc -1, 0, or 1)
             if (dr != 0) dr = dr > 0 ? 1 : -1;
             if (dc != 0) dc = dc > 0 ? 1 : -1;
             
-            // Start from shooter position, move in direction to edge
             int current_row = shooter_row + dr;
             int current_col = shooter_col + dc;
             
@@ -535,17 +523,12 @@ void Arena::handleShooting(RobotBase* shooter, int target_row, int target_col) {
         }
         
         case flamethrower: {
-            //std::cout << "  [FLAMETHROWER] 3x4 area\n";
-            // Flamethrower: 3 cells wide, 4 cells long from shooter
-            // Determine direction from shooter to target
             int dr = target_row - shooter_row;
             int dc = target_col - shooter_col;
             
-            // Normalize direction
             if (dr != 0) dr = dr > 0 ? 1 : -1;
             if (dc != 0) dc = dc > 0 ? 1 : -1;
             
-            // For 4 cells in length
             for (int length = 1; length <= 4; length++) {
                 int center_row = shooter_row + (dr * length);
                 int center_col = shooter_col + (dc * length);
@@ -575,15 +558,11 @@ void Arena::handleShooting(RobotBase* shooter, int target_row, int target_col) {
         }
         
         case hammer: {
-            //std::cout << "  [HAMMER] Adjacent cell only\n";
-            // Hammer: just the target cell (must be adjacent)
             affected_cells.push_back({target_row, target_col});
             break;
         }
         
         case grenade: {
-            //std::cout << "  [GRENADE] 3x3 area at target\n";
-            // Grenade: 3x3 area at target location
             for (int dr = -1; dr <= 1; dr++) {
                 for (int dc = -1; dc <= 1; dc++) {
                     affected_cells.push_back({target_row + dr, target_col + dc});
