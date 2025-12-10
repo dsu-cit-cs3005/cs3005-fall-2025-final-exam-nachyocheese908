@@ -60,9 +60,10 @@ void Arena::run_sim(bool live){
         
     placeObstacles();
 
-    //clearScreen();
+    clearScreen();
 
         while(!checkWinner() && current_round < 10000){
+            std::cout << "\n=========== ROUND " << current_round << " ===========\n";
 
             int alive_count = 0;
             for (auto robot : robots) {
@@ -146,7 +147,7 @@ void Arena::loadRobots() {
     std::cout << "Loading robots...\n";
     
     // List of robots to try loading
-    std::vector<std::string> robot_files = {"Robot_Flame_e_o.cpp", "Robot_Testbot.cpp", "Robot_Flame_e_o.cpp", "Robot_Testbot.cpp","Dylan_Bot.cpp","Dylan_Bot_V2.cpp"};
+    std::vector<std::string> robot_files = {/*"Robot_Flame_e_o.cpp", "Robot_Testbot.cpp", "Robot_Flame_e_o.cpp", "Robot_Testbot.cpp",*/"Dylan_Bot.cpp","Dylan_Bot_V2.cpp"};
     
     int loaded_count = 0;
     for (const auto& filename : robot_files) {
