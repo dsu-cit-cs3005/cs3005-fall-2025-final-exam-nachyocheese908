@@ -147,7 +147,7 @@ void Arena::loadRobots() {
     std::cout << "Loading robots...\n";
     
     // List of robots to try loading
-    std::vector<std::string> robot_files = {/*"Robot_Flame_e_o.cpp", "Robot_Testbot.cpp", "Robot_Flame_e_o.cpp", "Robot_Testbot.cpp",*/"Dylan_Bot.cpp","Dylan_Bot_V2.cpp"};
+    std::vector<std::string> robot_files = {"Robot_Flame_e_o.cpp", "Robot_Testbot.cpp", "Robot_Flame_e_o.cpp", "Robot_Testbot.cpp","Dylan_Bot.cpp","Dylan_Bot_V2.cpp"};
     
     int loaded_count = 0;
     for (const auto& filename : robot_files) {
